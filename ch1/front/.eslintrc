@@ -1,0 +1,21 @@
+{
+    "parserOptions": {
+        "ecmaVersion": 2019,
+        "sourceType": "module", // import, export, require를 사용하기 때문. script라는 것도 있음
+        "ecmaFeatures": {
+            "jsx": true
+        }
+    },
+    "env": {
+        "browser": true,
+        "node": true
+    },
+    "extends": [
+        "eslint:recommended",
+        "plugin:react/recommended"
+    ],
+    "plugins": [
+        "import",
+        "react-hooks"
+    ]
+}
