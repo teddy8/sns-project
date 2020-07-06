@@ -7,6 +7,6 @@
         "models",
         "nodemon.json"
     ],
-    "exec": "node index.js",
-    "ext": "js json"
+    "exec": "ts-node index.ts",
+    "ext": "ts js json"
 }
