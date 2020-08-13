@@ -13,9 +13,11 @@ class Post extends Model {
   public RetweetId!: number | null;
 
   public addHashtags!: HasManyAddAssociationMixin<Hashtag, number>
+  public setHashtags!: HasManyAddAssociationMixin<Hashtag, number>
   public addComment!: HasManyAddAssociationMixin<Comment, number>
   public addLiker!: HasManyAddAssociationMixin<User, number>
   public addImages!: HasManyAddAssociationMixin<Image, number>
+  public setImages!: HasManyAddAssociationMixin<Image, number>
   public removeLiker!: HasManyRemoveAssociationMixin<User, number>
 
   public readonly Retweet?: Post;

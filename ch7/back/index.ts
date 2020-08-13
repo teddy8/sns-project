@@ -14,6 +14,12 @@ import * as dotenv from 'dotenv';
 import * as passport from 'passport';
 import passportConfig from './passport'
 import * as cors from 'cors'
+import * as fs from 'fs'
+import * as path from 'path'
+
+export const indexRoot = path.join(__dirname);
+console.log('indexRoot=', indexRoot);
+
 
 dotenv.config();
 const app = express();

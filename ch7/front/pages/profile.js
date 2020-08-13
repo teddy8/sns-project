@@ -1,97 +1,75 @@
-import React, { useEffect } from 'react'
-import { Input, Button, Card, Form, List, Icon } from 'antd'
-import NicknameEditForm from '../components/NicknameEditForm'
-import { useDispatch, useSelector } from 'react-redux'
+import React from 'react';
+import { useSelector } from 'react-redux';
+import axios from 'axios';
+import { END } from 'redux-saga';
+import Head from 'next/head';
+import NicknameEditForm from '../components/NicknameEditForm';
 import {
-    LOAD_FOLLOWERS_REQUEST, LOAD_FOLLOWINGS_REQUEST,
-    REMOVE_FOLLOWER_REQUEST, UNFOLLOW_USER_REQUEST
-} from '../reducers/user'
+  LOAD_USER_REQUEST,
+  LOAD_FOLLOWERS_REQUEST,
+  LOAD_FOLLOWINGS_REQUEST,
+  REMOVE_FOLLOWER_REQUEST,
+  UNFOLLOW_USER_REQUEST,
+} from '../reducers/user';
+
+import AppLayout from '../components/AppLayout';
+import wrapper from '../store/configureStore';
+import FollowList from '../components/FollowList';
 
 const Profile = () => {
-    const { me, followerList, followingList } = useSelector(state => state.user);
-    const dispatch = useDispatch();
+  const { followerList, followingList } = useSelector((state) => state.user);
 
-    // useEffect(() => {
-    //     if (me) {
-    //         dispatch({
-    //             type: LOAD_FOLLOWERS_REQUEST,
-    //             data: me.id
-    //         })
-    //         dispatch({
-    //             type: LOAD_FOLLOWINGS_REQUEST,
-    //             data: me.id
-    //         })
-    //     }
-    // }, [me && me.id])
-
-    const onUnFollow = userId => () => {
-        dispatch({
-            type: UNFOLLOW_USER_REQUEST,
-            data: userId
-        })
-    }
-
-    const onRemoveFollower = userId => () => {
-        dispatch({
-            type: REMOVE_FOLLOWER_REQUEST,
-            data: userId
-        })
-    }
-
-    return  (
-    <div>
+  return (
+    <>
+      <Head>
+        <title>내 프로필 | NodeBird</title>
+      </Head>
+      <AppLayout>
         <NicknameEditForm />
-        <List 
-            style={{ marginBottom: '20px' }}
-            grid={{ gutter: 4, xs: 2, md: 3 }}
-            size="small"
-            header={<div>팔로잉 목록</div>}
-            loadMore={<Button style={{ width: '100%' }}>더 보기</Button>}
-            bordered
-            dataSource={followingList}
-            renderItem={item => (
-                <List.Item style={{ marginTop: '20px' }}>
-                    <Card actions={[<Icon key='stop' type="stop" onClick={onUnFollow(item.id)} />]}>
-                        <Card.Meta description={item.nickname} />
-                    </Card>
-                </List.Item>
-            )}
+        <FollowList
+          headerText="팔로잉 목록"
+          itemList={followingList}
+          LoadRequestAction={LOAD_FOLLOWINGS_REQUEST}
+          RemoveFollowRequestAction={UNFOLLOW_USER_REQUEST}
         />
-        <List 
-            style={{ marginBottom: '20px' }}
-            grid={{ gutter: 4, xs: 2, md: 3 }}
-            size="small"
-            header={<div>팔로워 목록</div>}
-            loadMore={<Button style={{ width: '100%' }}>더 보기</Button>}
-            bordered
-            dataSource={followerList}
-            renderItem={item => (
-                <List.Item style={{ marginTop: '20px' }}>
-                    <Card actions={[<Icon key='stop' type="stop" onClick={onRemoveFollower(item.id)} />]}>
-                        <Card.Meta description={item.nickname} />
-                    </Card>
-                </List.Item>
-            )}
+        <FollowList
+          headerText="팔로워 목록"
+          itemList={followerList}
+          LoadRequestAction={LOAD_FOLLOWERS_REQUEST}
+          RemoveFollowRequestAction={REMOVE_FOLLOWER_REQUEST}
         />
-    </div> 
-    )
-}
+      </AppLayout>
+    </>
+  );
+};
 
-Profile.getInitialProps = async (context) => {
-    const state = context.store.getState();
-    const me = state.user.me;
-    console.log('me=', me);
-    
-    // if (me) {
-        context.store.dispatch({
-            type: LOAD_FOLLOWERS_REQUEST,
-            data: me && me.id
-        })
-        context.store.dispatch({
-            type: LOAD_FOLLOWINGS_REQUEST,
-            data: me && me.id
-        })
-    // }
-}
+export const getServerSideProps = wrapper.getServerSideProps(async (context) => {
+  const cookie = context.req ? context.req.headers.cookie : '';
+  axios.defaults.headers.Cookie = '';
+  if (context.req && cookie) {
+    axios.defaults.headers.Cookie = cookie;
+  }
+
+  context.store.dispatch({
+    type: LOAD_USER_REQUEST,
+  });
+  context.store.dispatch({
+    type: LOAD_FOLLOWINGS_REQUEST,
+    data: {
+      offset: 0,
+      limit: 3,
+    },
+  });
+  context.store.dispatch({
+    type: LOAD_FOLLOWERS_REQUEST,
+    data: {
+      offset: 0,
+      limit: 3,
+    },
+  });
+
+  context.store.dispatch(END);
+  await context.store.sagaTask.toPromise();
+});
 
 export default Profile;

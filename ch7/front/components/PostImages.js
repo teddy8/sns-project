@@ -1,58 +1,65 @@
 import React, { useCallback, useState } from 'react';
 import PropTypes from 'prop-types';
-import { Icon } from 'antd'
-import ImagesZoom from '../components/ImazesZoom'
+import { PlusCircleOutlined } from '@ant-design/icons';
+import styled from 'styled-components';
+import ImagesZoom from './ImazesZoom';
+
+const Div = styled.div`
+display: inline-block;
+width: 50%;
+text-align: center;
+vertical-align: middle;
+`;
 
 const PostImages = ({ images }) => {
-    const [showImagesZoom, setShowImagesZoom] = useState(false);
-    const onZoom = useCallback(() => {
-        setShowImagesZoom(true);
-    }, [])
+  const [showImagesZoom, setShowImagesZoom] = useState(false);
+  const onZoom = useCallback(() => {
+    setShowImagesZoom(true);
+  }, []);
 
-    const onClose = useCallback(() => {
-        setShowImagesZoom(false);        
-    }, [])
+  const onClose = useCallback(() => {
+    setShowImagesZoom(false);
+  }, []);
 
-    if (images.length === 1) {
-        return (
-            <>
-                <img src={`http://localhost:3065/${images[0].src}`} onClick={onZoom} />
-                {showImagesZoom && <ImagesZoom images={images} onClose={onClose} />}
-            </>
-        )
-    }
-    
-    if (images.length === 2) {
-        return (
-            <>
-                <div>
-                    <img src={`http://localhost:3065/${images[0].src}`} width="50%" onClick={onZoom} />
-                    <img src={`http://localhost:3065/${images[1].src}`} width="50%" onClick={onZoom} />
-                </div>
-                {showImagesZoom && <ImagesZoom images={images} onClose={onClose} />}
-            </>
-        )
-    }
-// 이미지나 더보기를 클릭하면 ImagesZoom을 로딩함
-    return ( 
-        <>
+  if (images.length === 1) {
+    return (
+      <>
+        <img role="presentation" src={`http://localhost:3065/${images[0].src}`} alt={images[0].src} onClick={onZoom} />
+        {showImagesZoom && <ImagesZoom images={images} onClose={onClose} />}
+      </>
+    );
+  }
+
+  if (images.length === 2) {
+    return (
+      <>
         <div>
-          <img src={`http://localhost:3065/${images[0].src}`} width="50%"  onClick={onZoom} />
-          <div style={{ display: 'inline-block', width: '50%', textAlign: 'center', verticalAlign: 'middle' }} onClick={onZoom} >
-            <Icon type="plus" />
-            <br />
-            {images.length - 1}
-            개의 사진 더보기
-          </div>
+          <img role="presentation" src={`http://localhost:3065/${images[0].src}`} alt={images[0].src} width="50%" onClick={onZoom} />
+          <img role="presentation" src={`http://localhost:3065/${images[1].src}`} alt={images[1].src} width="50%" onClick={onZoom} />
         </div>
         {showImagesZoom && <ImagesZoom images={images} onClose={onClose} />}
-        </>
+      </>
     );
-}
+  }
+  // 이미지나 더보기를 클릭하면 ImagesZoom을 로딩함
+  return (
+    <>
+      <div>
+        <img role="presentation" src={`http://localhost:3065/${images[0].src}`} alt={images[0].src} width="50%" onClick={onZoom} />
+        <Div role="presentation" onClick={onZoom}>
+          <PlusCircleOutlined type="plus" />
+          <br />
+          {images.length - 1}
+          개의 사진 더보기
+        </Div>
+      </div>
+      {showImagesZoom && <ImagesZoom images={images} onClose={onClose} />}
+    </>
+  );
+};
 
 PostImages.propTypes = {
-    
-}
+  images: PropTypes.arrayOf(PropTypes.object).isRequired,
+};
 
-export default PostImages
-
+export default PostImages;

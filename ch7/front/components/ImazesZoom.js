@@ -1,51 +1,54 @@
-import React, { useState } from 'react'
-import PropTypes from 'prop-types'
+import React, { useState } from 'react';
+import PropTypes from 'prop-types';
+import { CloseOutlined } from '@ant-design/icons';
 import Slick from 'react-slick';
-import { Icon } from 'antd'
+import styled from 'styled-components';
 
 const ImagesZoom = ({ images, onClose }) => {
-    const [currentSlide, setCurrentSlide] = useState(0); // 현재 몇번째 이미지인지
+  const [currentSlide, setCurrentSlide] = useState(0); // 현재 몇번째 이미지인지
 
-    return (
-        <div style={{ position: 'fixed', zIndex: 5000, top: 0, left: 0, right: 0, bottom: 0 }}>
-            <header style={{ height: 44, background: 'white', position: 'relative', padding: 0, textAlign: 'center' }}>
-                <h1 style={{ margin: 0, fontSize: '17px', color: '#333', lineHeight: '44px' }}>상세 이미지</h1>
-                <Icon type="close" onClick={onClose} style={{ position: 'absolute', right: 0, top: 0, padding: 15, lineHeight: '14px', cursor: 'pointer' }} />
-            </header>
-            <div style={{ height: 'calc(100% - 44px)', background: '#090909' }}>
-                <div>
-                    <Slick
-                        initialSlide={0}
-                        afterChange={slide => setCurrentSlide(slide)} // 현재 슬라이드가 몇번째인지 슬라이드 할 때마다 바꿔줘야 함
-                        infinite={false}    // 1 2 3 4 보여주고 다시 1로 가지 않도록 막아주기.
-                        arrows  // 화살표 추가하기
-                        slidesToShow={1} // 한번에 한장만 보여주기
-                        slidesToScroll={1} // 한번에 한장만 스크롤하기
-                    >
-                        {images.map(v => {
-                            return (
-                                <div style={{ padding: 32, textAlign: 'center' }}>
-                                    <img src={`http://localhost:3065/${v.src}`} style={{ margin: '0 auto', maxHeight: 750 }} />
-                                </div>
-                            )
-                        })}
-                    </Slick>
-                    <div style={{ textAlign: 'center' }}>
-                        <div style={{ width: 75, height: 30, lineHeight: '30px', borderRadius: 15, background: '#313131', display: 'inline-block', textAlign: 'center', color: 'white', fontSize: '15px' }}>
-                            {currentSlide + 1} / {images.length}
-                        </div>
-                    </div>
-                </div>
+  return (
+    <div style={{ position: 'fixed', zIndex: 5000, top: 0, left: 0, right: 0, bottom: 0 }}>
+      <header style={{ height: 44, background: 'white', position: 'relative', padding: 0, textAlign: 'center' }}>
+        <h1 style={{ margin: 0, fontSize: '17px', color: '#333', lineHeight: '44px' }}>상세 이미지</h1>
+        <CloseOutlined type="close" onClick={onClose} style={{ position: 'absolute', right: 0, top: 0, padding: 15, lineHeight: '14px', cursor: 'pointer' }} />
+      </header>
+      <div style={{ height: 'calc(100% - 44px)', background: '#090909' }}>
+        <div>
+          <Slick
+            initialSlide={0}
+            afterChange={(slide) => setCurrentSlide(slide)} // 현재 슬라이드가 몇번째인지 슬라이드 할 때마다 바꿔줘야 함
+            infinite={false} // 1 2 3 4 보여주고 다시 1로 가지 않도록 막아주기.
+            arrows // 화살표 추가하기
+            slidesToShow={1} // 한번에 한장만 보여주기
+            slidesToScroll={1}
+          >
+            {images.map((v) => (
+              <div style={{ padding: 32, textAlign: 'center' }}>
+                <img src={`http://localhost:3065/${v.src}`} alt={v.src} style={{ margin: '0 auto', maxHeight: 750 }} />
+              </div>
+            ))}
+          </Slick>
+          <div style={{ textAlign: 'center' }}>
+            <div style={{ width: 75, height: 30, lineHeight: '30px', borderRadius: 15, background: '#313131', display: 'inline-block', textAlign: 'center', color: 'white', fontSize: '15px' }}>
+              {currentSlide + 1}
+              {' '}
+              /
+              {' '}
+              {images.length}
             </div>
+          </div>
         </div>
-    )
-}
+      </div>
+    </div>
+  );
+};
 
 ImagesZoom.propTypes = {
-    images: PropTypes.arrayOf(PropTypes.shape({
-        src: PropTypes.string,
-    })).isRequired,
-    onClose: PropTypes.func.isRequired,
+  images: PropTypes.arrayOf(PropTypes.shape({
+    src: PropTypes.string,
+  })).isRequired,
+  onClose: PropTypes.func.isRequired,
 };
 
 export default ImagesZoom;

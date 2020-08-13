@@ -1,10 +1,12 @@
 import * as express from 'express'
 import * as multer from 'multer'
 import * as path from 'path'
+import * as fs from 'fs'
 import db from '../models'
 import { isLoggedIn } from './middleware'
 import Hashtag from '../models/hashtag'
 import * as Bluebird from 'bluebird'
+import { indexRoot } from '..'
 
 const router = express.Router();
 
@@ -21,11 +23,175 @@ const upload = multer({
   }),
   limits: { fileSize: 20 * 1024 * 1024 } // 파일사이즈 제한 가능. byte단위. 이건 20mb. 이게 너무 크면 해커의 공격가능성 서버에 무리를 줄 수 있기 때문. 파일 개수도 제한할 수 있다 multer의 옵션을 살펴볼 것.
 })
-// 이미지 리사이징도 여기서 처리하면 됨
+
 router.post('/images', upload.array('image'), (req, res) => { // 이미지를 여러개 올릴 수 있기 때문에 array라는 미들웨어를 써야한다.(1장만 올릴 수 있으면 single) 안에 들어가는 인자는 프론트의 Form데이터에서 append하는 이름과 일치해야한다.(이미지 여러개면서 프론트에서 append한 이름이 각각 다르다면 upload.fields([{'image}, {'img'}])로 해야함). 이미지나 파일같은것을 하나도 안올렸을 때는 upload.none()
+  // 이미지 리사이징도 여기서 처리하면 됨
   // console.log(req.files);
   res.json((req.files as Express.Multer.File[]).map(v => v.filename)); // 파일정보는 req에 담겨있다. (1개면 req.file에 들어있음)
 });
+
+router.delete('/:id/image/upload/:src', isLoggedIn, async (req, res, next) => {
+  try {
+    console.log('id=', req.params.id);
+    console.log('src=', req.params.src);
+
+    // 로컬 파일 삭제
+    const filePath = path.join(indexRoot, 'uploads', req.params.src);
+
+    fs.access(filePath, fs.constants.F_OK, (err) => { // A
+      if (err) {
+        console.log('삭제할 수 없는 파일입니다', filePath);
+        return res.status(403);
+      }
+
+      fs.unlink(filePath, (err) => err ? res.status(404).send(err) : res.status(200))
+    });
+    res.send(200);
+  } catch (e) {
+    console.error(e);
+    next(e);
+  }
+})
+
+router.delete('/:id/image/modify/:src', isLoggedIn, async (req, res, next) => {
+  try {
+    console.log('id=', req.params.id);
+    console.log('src=', req.params.src);
+
+    const post = await db.Post.findOne({ where: { id: req.params.id } })
+    if (!post) {
+      return res.status(404).send('포스트가 존재하지 않습니다. ' + req.params.id);
+    }
+
+    // image테이블에서 삭제
+    await db.Image.destroy({
+      where: {
+        PostId: req.params.id,
+        src: req.params.src,
+      }
+    })
+
+    // 로컬 파일 삭제
+    const filePath = path.join(indexRoot, 'uploads', req.params.src);
+
+    fs.access(filePath, fs.constants.F_OK, (err) => { // A
+      if (err) {
+        console.log('삭제할 수 없는 파일입니다', filePath);
+        return res.status(403);
+      }
+
+      fs.unlink(filePath, (err) => err ? res.status(404).send(err) : res.status(200))
+    });
+    res.send(200);
+  } catch (e) {
+    console.error(e);
+    next(e);
+  }
+})
+
+router.delete('/image/modify/:src', isLoggedIn, async (req, res, next) => {
+  try {
+    console.log('src=', req.params.src);
+    console.log('indexRoot2=', indexRoot);
+
+    const filePath = path.join(indexRoot, 'uploads', req.params.src);
+
+    fs.access(filePath, fs.constants.F_OK, (err) => { // A
+      if (err) {
+        return console.log('삭제할 수 없는 파일입니다', filePath);
+      }
+      // C:\Program Files\Git\usr\react-nodebird\ch7\back\routes\uploads\icon61597161369007.png
+      // C:\Program Files\Git\usr\react-nodebird\ch7\back\uploads\icon61597161369007.png
+      fs.unlink(filePath, (err) => err ? res.status(404).send(err) : res.status(200))
+    });
+    res.send(200);
+  } catch (e) {
+    console.error(e);
+    next(e);
+  }
+})
+
+router.get('/:id/images', isLoggedIn, async (req, res, next) => {
+  try {
+    const post = await db.Post.findOne({ where: { id: req.params.id } })
+    if (!post) {
+      return res.status(404).send('포스트가 존재하지 않습니다. ' + req.params.id);
+    }
+
+    const images = await db.Image.findAll({ // id, src, postId, createdAt, updatedAt 중
+      where: { postId: req.params.id },
+      attributes: ['src'] // src만
+    })
+
+    res.json(images.map(v => v.src));
+  } catch (e) {
+    console.error(e);
+    next(e);
+  }
+})
+
+router.patch('/', isLoggedIn, upload.none(), async (req, res, next) => {
+  console.log('게시글 업데이트 해보자');
+  console.log('userId = ', req.user!.id);
+  console.log('postId = ', req.body.postId); // ok
+  console.log('content = ', req.body.content); // ok
+  console.log('image = ', req.body.image);
+
+  try {
+    const post = await db.Post.findOne({ where: { id: req.body.postId } })
+    if (!post) {
+      return res.status(404).send('포스트가 존재하지 않습니다. ' + req.body.postId);
+    }
+
+    await db.Post.update(
+      {
+        content: req.body.content,
+      },
+      {
+        where: { id: Number(req.body.postId) }
+      })
+
+    const hashtags = req.body.content.match(/#[^\s]+/g);
+    // const newPost = await db.Post.create({
+    //   content: req.body.content, // ex) '제로초 파이팅 #구독 #좋아요 눌러주세요'
+    //   UserId: req.user!.id,
+    // });
+
+    if (hashtags) { // 해쉬태그를 하나하나 레코드 삽입 (찾았을 때 없을 경우 . # 빼고  소문자로)
+      const promises = hashtags.map((tag: string) => db.Hashtag.findOrCreate({
+        where: { name: tag.slice(1).toLowerCase() },
+      }));
+      const result: any = await Promise.all(promises)
+      await post.setHashtags(result.map((r: any) => r[0]));
+    }
+
+    if (req.body.image) { // 이미지를 올렸는데
+      if (typeof (req.body.image) !== 'object') { //  한장이든 여러장이든 map으로 처리하려고 오브젝트 아니면 배열로 만들어줌'
+        req.body.image = [req.body.image]
+      }
+
+      const images: any = await Promise.all(req.body.image.map((v: string) => {
+        return db.Image.create({ src: v });
+      }))
+      await post.setImages(images);
+    }
+
+    //   // 추가한 포스트에 현재 유저 포함해서 뱉는거. 이미지도 불러와서 보내줌
+    const fullPost = await db.Post.findOne({
+      where: { id: post.id },
+      include: [{
+        model: db.User,
+      }, {
+        model: db.Image,
+      }],
+    });
+
+    res.json(fullPost);
+  } catch (e) {
+    console.error(e);
+    next(e)
+  }
+})
 
 router.post('/', isLoggedIn, upload.none(), async (req, res, next) => {
   try {
@@ -76,13 +242,27 @@ router.post('/', isLoggedIn, upload.none(), async (req, res, next) => {
   }
 })
 
+router.delete('/:id', isLoggedIn, async (req, res, next) => {
+  try {
+    const post = await db.Post.findOne({ where: { id: req.params.id } })
+    if (!post) {
+      return res.status(404).send('포스트가 존재하지 않습니다. ' + req.params.id);
+    }
+    await post.destroy();
+    res.json({ postId: parseInt(req.params.id) })
+  } catch (e) {
+    console.error(e);
+    next(e)
+  }
+})
+
 router.post('/:id/like', isLoggedIn, async (req, res, next) => {
   try {
     const post = await db.Post.findOne({ where: { id: req.params.id } })
     if (!post) {
       return res.status(404).send('포스트가 존재하지 않습니다. ' + req.params.id);
     }
-    await post.addLiker(parseInt(req.user!.id))
+    await post.addLiker(req.user!.id)
     res.json({ userId: req.user!.id })
   } catch (e) {
     console.error(e);
@@ -96,7 +276,7 @@ router.delete('/:id/like', isLoggedIn, async (req, res, next) => {
     if (!post) {
       return res.status(404).send('포스트가 존재하지 않습니다. ' + req.params.id);
     }
-    await post.removeLiker(parseInt(req.user!.id))
+    await post.removeLiker(req.user!.id)
     res.json({ userId: req.user!.id })
   } catch (e) {
     console.error(e);
@@ -177,7 +357,7 @@ router.post('/:id/retweet', isLoggedIn, async (req, res, next) => {
     if (!post) {
       return res.status(404).send('포스트가 존재하지 않습니다.');
     }
-    if (parseInt(req.user!.id) === post.UserId || (post.Retweet && post.Retweet.UserId === parseInt(req.user!.id))) {
+    if (req.user!.id === post.UserId || (post.Retweet && post.Retweet.UserId === req.user!.id)) {
       return res.status(403).send('자신의 글은 리트윗할 수 없습니다.');
     }
     const retweetTargetId = post.RetweetId || post.id;
@@ -221,5 +401,26 @@ router.post('/:id/retweet', isLoggedIn, async (req, res, next) => {
     next(e);
   }
 });
+
+router.get('/:id', async (req, res, next) => {
+  try {
+    const post = await db.Post.findOne({
+      where: { id: req.params.id },
+      include: [{
+        model: db.User,
+        attributes: ['id', 'nickname'],
+      }, {
+        model: db.Image,
+      }],
+
+    })
+    if (!post) { res.status(405).send('포스트가 존재하지 않습니다.') }
+
+    res.json(post);
+  } catch (e) {
+    console.error(e);
+    next(e)
+  }
+})
 
 export default router;

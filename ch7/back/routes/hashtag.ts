@@ -20,6 +20,8 @@ router.get('/:tag', async (req, res, next) => {
             }, {
                 model: db.Image,
             }],
+            limit: Number(req.query.limit),
+            offset: Number(req.query.offset),
         });
 
         res.json(posts);

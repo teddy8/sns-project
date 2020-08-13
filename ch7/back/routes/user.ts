@@ -1,21 +1,45 @@
 import * as express from 'express'
+import * as Sequelize from 'sequelize'
 import * as bcrypt from 'bcrypt';
 import * as passport from 'passport'
 import db from '../models';
 import { User, IUser } from '../models/user';
+import { parse } from 'path';
 
 const { isLoggedIn } = require('./middleware')
 const router = express.Router();
 
-router.get('/', isLoggedIn, (req, res) => { // 내정보 가져오는거
-    // console.log('내 정보 요청');
-    // const user = Object.assign({}, JSON.parse(String(req.user!)));
-    // const user = req.user!.toJSON() as User;
-    console.log('[[]]requser=', req.user);
-    const user: any = req.user
-    delete user.password;
-    return res.json(user);
-})
+router.get('/', async (req, res, next) => { // GET /user
+    try {
+        if (req.user) {
+            const fullUserWithoutPassword = await db.User.findOne({
+                where: { id: req.user.id },
+                attributes: {
+                    exclude: ['password']
+                },
+                include: [{
+                    model: db.Post,
+                    as: 'Posts',
+                    attributes: ['id'],
+                }, {
+                    model: db.User,
+                    as: 'Followings',
+                    attributes: ['id'],
+                }, {
+                    model: db.User,
+                    as: 'Followers',
+                    attributes: ['id'],
+                }]
+            })
+            res.status(200).json(fullUserWithoutPassword);
+        } else {
+            res.status(200).json(null);
+        }
+    } catch (error) {
+        console.error(error);
+        next(error);
+    }
+});
 
 router.post('/', async (req, res, next) => { // 회원가입 (내 정보 등록)
     try {
@@ -46,34 +70,47 @@ router.post('/', async (req, res, next) => { // 회원가입 (내 정보 등록)
     }
 })
 
-router.get('/:id', async (req, res, next) => { // 남의 정보 가져오는거
-    // console.log('남의 정보 요청');   
+// router.get('/:id/followings', isLoggedIn, async (req, res, next) => { // 해당 유저 팔로우 목록 가져오기
+router.get('/followings', isLoggedIn, async (req, res, next) => { // 해당 유저 팔로우 목록 가져오기
+    // console.log('id = ', req.params.id); // console.log('id = ', req.params.id);
+
+    console.log('팔로잉 정보 요청');
+    console.log('offset = ', req.query.offset);
+    console.log('limit = ', req.query.limit);
+
     try {
-        const user = await db.User.findOne({ // 지금데이터는 없지만 게시글수, 팔로잉, 팔로워 껴서 넣어준다.
-            where: { userId: req.params.id },
-            include: [{
-                model: db.Post,
-                as: 'Posts',
-                attributes: ['id'],
-            }, {
-                model: db.User,
-                as: 'Followings',
-                attributes: ['id'],
-            }, {
-                model: db.User,
-                as: 'Followers',
-                attributes: ['id'],
-            }],
-            attributes: ['id', 'nickname']
+        const user = await db.User.findOne({
+            where: { id: req.user!.id }
         })
-        // const jsonUser = user!.toJSON() as UserI;
+        if (!user) {
+            return res.status(403).send('아이디가 존재하지 않습니다.')
+        }
+        const followings = await user.getFollowings({
+            attributes: ['id', 'nickname'],
+            offset: Number(req.query.offset),
+            limit: Number(req.query.limit),
+        });
+        res.send(followings)
+    } catch (e) {
+        console.error(e);
+        next(e)
+    }
+})
 
-        const jsonUser: any = user!.toJSON()
-
-        jsonUser.Posts = jsonUser.Posts ? jsonUser.Posts.length : 0;
-        jsonUser.Followings = jsonUser.Followings ? jsonUser.Followings.length : 0;
-        jsonUser.Followers = jsonUser.Followers ? jsonUser.Followers.length : 0;
-        return res.json(jsonUser)
+router.get('/followers', isLoggedIn, async (req, res, next) => { // 해당 유저 팔로우 목록 가져오기
+    try {
+        const user = await db.User.findOne({
+            where: { id: req.user!.id }
+        })
+        if (!user) {
+            return res.status(403).send('아이디가 존재하지 않습니다.')
+        }
+        const followers = await user.getFollowers({
+            attributes: ['id', 'nickname'],
+            offset: Number(req.query.offset),
+            limit: Number(req.query.limit),
+        });
+        res.send(followers)
     } catch (e) {
         console.error(e);
         next(e)
@@ -171,42 +208,6 @@ router.delete('/:id/follow', async (req, res, next) => { // 해당 유저 팔로
     }
 })
 
-router.get('/:id/followers', isLoggedIn, async (req, res, next) => { // 해당 유저 팔로우 목록 가져오기
-    try {
-        const user = await db.User.findOne({
-            where: { id: parseInt(req.params.id, 10) || req.user!.id }
-        })
-        if (!user) {
-            return res.status(403).send('아이디가 존재하지 않습니다.')
-        }
-        const followers = await user.getFollowers({
-            attributes: ['id', 'nickname']
-        });
-        res.send(followers)
-    } catch (e) {
-        console.error(e);
-        next(e)
-    }
-})
-
-router.get('/:id/followings', isLoggedIn, async (req, res, next) => { // 해당 유저 팔로우 목록 가져오기
-    try {
-        const user = await db.User.findOne({
-            where: { id: parseInt(req.params.id, 10) || req.user!.id }
-        })
-        if (!user) {
-            return res.status(403).send('아이디가 존재하지 않습니다.')
-        }
-        const followings = await user.getFollowings({
-            attributes: ['id', 'nickname']
-        });
-        res.send(followings)
-    } catch (e) {
-        console.error(e);
-        next(e)
-    }
-})
-
 router.delete('/:id/follower', isLoggedIn, async (req, res, next) => { // 팔로워 삭제 (나를 따르고 있는 사람)
     try {
         const me = await db.User.findOne({
@@ -230,8 +231,10 @@ router.delete('/:id/following', (req, res) => { // 팔로잉 삭제 (내가 따�
 router.get('/:id/posts', async (req, res, next) => { // 특정유저의 모든 게시글 가져오기
     try {
         const posts = await db.Post.findAll({
+            limit: Number(req.query.limit),
             where: {
-                UserId: parseInt(req.params.id, 10),
+                id: Number(req.query.lastId) ? { [Sequelize.Op.lt]: Number(req.query.lastId) } : { [Sequelize.Op.ne]: null },
+                UserId: Number(req.params.id),
                 RetweetId: null,
             },
             include: [{
@@ -244,7 +247,7 @@ router.get('/:id/posts', async (req, res, next) => { // 특정유저의 모든 �
                 as: 'Likers',
                 attributes: ['id'],
             }],
-            order: [["createdAt", "DESC"]]
+            order: [["createdAt", "DESC"]],
         })
 
         res.json(posts);
@@ -268,6 +271,40 @@ router.patch('/nickname', isLoggedIn, async (req, res, next) => {
             where: { id: me.id }
         })
         res.send(req.body.nickname)
+    } catch (e) {
+        console.error(e);
+        next(e)
+    }
+})
+
+router.get('/:id', async (req, res, next) => { // 남의 정보 가져오는거
+    console.log('남의 정보 요청');
+    try {
+        const user = await db.User.findOne({ // 지금데이터는 없지만 게시글수, 팔로잉, 팔로워 껴서 넣어준다.
+            where: { userId: req.params.id },
+            include: [{
+                model: db.Post,
+                as: 'Posts',
+                attributes: ['id'],
+            }, {
+                model: db.User,
+                as: 'Followings',
+                attributes: ['id'],
+            }, {
+                model: db.User,
+                as: 'Followers',
+                attributes: ['id'],
+            }],
+            attributes: ['id', 'nickname']
+        })
+        // const jsonUser = user!.toJSON() as UserI;
+
+        const jsonUser: any = user!.toJSON()
+
+        jsonUser.Posts = jsonUser.Posts ? jsonUser.Posts.length : 0;
+        jsonUser.Followings = jsonUser.Followings ? jsonUser.Followings.length : 0;
+        jsonUser.Followers = jsonUser.Followers ? jsonUser.Followers.length : 0;
+        return res.json(jsonUser)
     } catch (e) {
         console.error(e);
         next(e)
