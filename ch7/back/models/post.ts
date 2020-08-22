@@ -22,6 +22,10 @@ class Post extends Model {
 
   public readonly Retweet?: Post;
   public readonly User?: User;
+  public readonly Likers?: User[];
+  public readonly Images?: Image[];
+  public readonly createdAt!: Date;
+  public readonly Comments?: Comment[];
 }
 
 Post.init({
