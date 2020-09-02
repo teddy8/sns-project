@@ -1,6 +1,8 @@
-const dotenv = require('dotenv');
+"use strict";
+exports.__esModule = true;
+var dotenv = require("dotenv");
 dotenv.config();
-module.exports = {
+var config = {
     development: {
         username: 'root',
         password: process.env.DB_PASSWORD,
@@ -26,4 +28,4 @@ module.exports = {
         operatorsAliases: false
     }
 };
-//# sourceMappingURL=config.js.map
+exports["default"] = config;

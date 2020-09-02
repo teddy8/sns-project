@@ -1,29 +1,40 @@
-// const express = require('express');
-import * as express from 'express';
-const morgan = require('morgan');
-const db = require('./models');
-const userAPIRouter = require('./routes/user');
-const postAPIRouter = require('./routes/post');
-const postsAPIRouter = require('./routes/posts');
-const hashtagAPIRouter = require('./routes/hashtag');
-const cors = require('cors');
-const cookieParser = require('cookie-parser');
-const expressSession = require('express-session');
-const dotenv = require('dotenv');
-const passport = require('passport');
-const passportConfig = require('./passport');
+"use strict";
+exports.__esModule = true;
+exports.indexRoot = void 0;
+var express = require("express");
+var morgan = require("morgan");
+var models_1 = require("./models");
+var user_1 = require("./routes/user");
+var post_1 = require("./routes/post");
+var posts_1 = require("./routes/posts");
+var hashtag_1 = require("./routes/hashtag");
+var cookieParser = require("cookie-parser");
+var expressSession = require("express-session");
+var dotenv = require("dotenv");
+var passport = require("passport");
+var passport_1 = require("./passport");
+var cors = require("cors");
+var path = require("path");
+exports.indexRoot = path.join(__dirname);
+console.log('indexRoot=', exports.indexRoot);
+var prod = process.env.NODE_ENV === 'production';
 dotenv.config();
-const app = express();
-db.sequelize.sync();
-passportConfig();
-app.use(morgan('dev')); // 이걸쓰면 로그가 남음
+var app = express();
+models_1["default"].sequelize.sync({ force: false })
+    .then(function () {
+    console.log('데이터베이스 연결 성공');
+})["catch"](function (e) {
+    console.error(e);
+});
+passport_1["default"]();
+app.use(morgan('dev'));
 app.use('/', express.static('uploads'));
 app.use(cors({
     origin: true,
-    credentials: true,
+    credentials: true
 }));
-app.use(express.json()); // app.use('/', express.json()) ; 원래 경로를 저렇게 넣는데 모든경로는 생략가능
-app.use(express.urlencoded({ extended: true })); // 요청에 본문이 들어왔을 때 request body에 넣어주는 역할;
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser(process.env.COOKIE_SECRET));
 app.use(expressSession({
     resave: false,
@@ -31,17 +42,15 @@ app.use(expressSession({
     secret: process.env.COOKIE_SECRET,
     cookie: {
         httpOnly: true,
-        secure: false,
-    },
+        secure: false
+    }
 }));
 app.use(passport.initialize());
 app.use(passport.session());
-app.use('/api/user', userAPIRouter);
-app.use('/api/post', postAPIRouter);
-app.use('/api/posts', postsAPIRouter);
-app.use('/api/hashtag', hashtagAPIRouter);
-app.listen(3065, () => {
-    console.log('server is running on http://localhost:3065');
-    ;
+app.use('/api/user', user_1["default"]);
+app.use('/api/post', post_1["default"]);
+app.use('/api/posts', posts_1["default"]);
+app.use('/api/hashtag', hashtag_1["default"]);
+app.listen(prod ? process.env.PORT : 3065, function () {
+    console.log('server is running on http://localhost:' + process.env.PORT);
 });
-//# sourceMappingURL=index.js.map

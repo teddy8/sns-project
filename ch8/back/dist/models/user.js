@@ -1,29 +1,47 @@
-module.exports = (sequelize, DataTypes) => {
-    const User = sequelize.define('User', {
-        nickname: {
-            type: DataTypes.STRING(20),
-            allowNull: false,
-        },
-        userId: {
-            type: DataTypes.STRING(20),
-            allowNull: false,
-            unique: true,
-        },
-        password: {
-            type: DataTypes.STRING(100),
-            allowNull: false,
-        },
-    }, {
-        charset: 'utf8',
-        collate: 'utf8_general_ci',
-    });
-    User.associate = (db) => {
-        db.User.hasMany(db.Post, { as: 'Posts' }); // 한 명이 여러개의 포스팅을 쓸 수 있다
-        db.User.hasMany(db.Comment);
-        db.User.belongsToMany(db.Post, { through: 'Like', as: 'Liked' });
-        db.User.belongsToMany(db.User, { through: 'Follow', as: 'Followers', foreignKey: 'followingId' });
-        db.User.belongsToMany(db.User, { through: 'Follow', as: 'Followings', foreignKey: 'followerId' });
+"use strict";
+var __extends = (this && this.__extends) || (function () {
+    var extendStatics = function (d, b) {
+        extendStatics = Object.setPrototypeOf ||
+            ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
+            function (d, b) { for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p]; };
+        return extendStatics(d, b);
     };
+    return function (d, b) {
+        extendStatics(d, b);
+        function __() { this.constructor = d; }
+        d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
+    };
+})();
+exports.__esModule = true;
+exports.User = void 0;
+var sequelize_1 = require("sequelize");
+var dbConnection_1 = require("./dbConnection");
+var User = (function (_super) {
+    __extends(User, _super);
+    function User() {
+        return _super !== null && _super.apply(this, arguments) || this;
+    }
     return User;
-};
-//# sourceMappingURL=user.js.map
+}(sequelize_1.Model));
+exports.User = User;
+User.init({
+    nickname: {
+        type: sequelize_1.DataTypes.STRING(20),
+        allowNull: false
+    },
+    userId: {
+        type: sequelize_1.DataTypes.STRING(20),
+        allowNull: false,
+        unique: true
+    },
+    password: {
+        type: sequelize_1.DataTypes.STRING(100),
+        allowNull: false
+    }
+}, {
+    sequelize: dbConnection_1.sequelize,
+    modelName: 'User',
+    charset: 'utf8',
+    collate: 'utf8_general_ci'
+});
+exports["default"] = User;
