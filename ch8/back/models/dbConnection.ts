@@ -1,9 +1,9 @@
-const Sequelize = require('sequelize');
-const env = process.env.NODE_ENV || 'development';
-const config = require('../config/config')[env];
+import { Sequelize } from 'sequelize';
+import config from '../config/config';
 
-const sequelize = new Sequelize(config.database, config.username, config.password, config);
-// console.log('seq = ', sequelize);
+const env = process.env.NODE_ENV as ('production' | 'test' | 'development') || 'development';
+const { database, username, password } = config[env];
+const sequelize = new Sequelize(database, username, password, config[env]);
 
-export { sequelize }
+export { sequelize };
 export default sequelize;

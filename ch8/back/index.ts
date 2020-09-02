@@ -20,7 +20,7 @@ import * as path from 'path'
 export const indexRoot = path.join(__dirname);
 console.log('indexRoot=', indexRoot);
 
-
+const prod = process.env.NODE_ENV === 'production';
 dotenv.config();
 const app = express();
 
@@ -60,6 +60,6 @@ app.use('/api/post', postAPIRouter)
 app.use('/api/posts', postsAPIRouter)
 app.use('/api/hashtag', hashtagAPIRouter)
 
-app.listen(3065, () => {
-    console.log('server is running on http://localhost:3065');;
+app.listen(prod ? process.env.PORT : 3065, () => {
+    console.log('server is running on http://localhost:' + process.env.PORT);
 });
