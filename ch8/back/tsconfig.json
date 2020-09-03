@@ -20,6 +20,6 @@
         ],
         "resolveJsonModule": true,
         "outDir": "./dist",
-        "removeComments": true
+        "removeComments": true,
     }
 }

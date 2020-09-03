@@ -2,7 +2,7 @@
   "name": "react-nodebird-back",
   "version": "1.0.0",
   "description": "",
-  "main": "index.js",
+  "main": "./dist/index.js",
   "scripts": {
     "dev": "nodemon",
     "start": "tsc && node ./dist/index.js"
