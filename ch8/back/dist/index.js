@@ -51,6 +51,9 @@ app.use('/api/user', user_1["default"]);
 app.use('/api/post', post_1["default"]);
 app.use('/api/posts', posts_1["default"]);
 app.use('/api/hashtag', hashtag_1["default"]);
+app.get('/', function (req, res) {
+    res.send('hello backend');
+});
 app.listen(prod ? process.env.PORT : 3065, function () {
     console.log('server is running on http://localhost:' + process.env.PORT);
 });

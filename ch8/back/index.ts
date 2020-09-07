@@ -60,6 +60,10 @@ app.use('/api/post', postAPIRouter)
 app.use('/api/posts', postsAPIRouter)
 app.use('/api/hashtag', hashtagAPIRouter)
 
+app.get('/', (req, res) => {
+    res.send('hello backend')
+})
+
 app.listen(prod ? process.env.PORT : 3065, () => {
     console.log('server is running on http://localhost:' + process.env.PORT);
 });
