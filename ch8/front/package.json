@@ -6,9 +6,9 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "dev": "next -p 3060",
-    "build": "cross-env ANALYZE=true BUNDLE_ANALYZE=both NODE_ENV=production next build",
+    "build": "cross-env ANALYZE=true NODE_ENV=production next build",
     "prestart": "npm run build",
-    "start": "cross-env NODE_ENV=production PORT=80 pm2 start"
+    "start": "cross-env NODE_ENV=production next start -p 80 "
   },
   "author": "oh",
   "license": "MIT",
