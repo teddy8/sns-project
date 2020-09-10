@@ -1,7 +1,8 @@
 // const express = require('express');
 import * as express from 'express'
 import * as morgan from 'morgan';
-
+import * as hpp from 'hpp';
+import * as helmet from 'helmet';
 import db from './models'
 import userAPIRouter from './routes/user'
 import postAPIRouter from './routes/post'
@@ -18,11 +19,29 @@ import * as fs from 'fs'
 import * as path from 'path'
 
 export const indexRoot = path.join(__dirname);
+export const originURL = 'http://jinukcloud.pe.kr'
 console.log('indexRoot=', indexRoot);
 
-const prod = process.env.NODE_ENV === 'production';
 dotenv.config();
 const app = express();
+const prod = process.env.NODE_ENV === 'production';
+
+if (prod) {
+    app.use(hpp());
+    app.use(helmet());
+    app.use(morgan('combined')); // 더 상세한 모드
+    app.use(cors({
+        origin: originURL, // originURL이 아니면 다 거름
+        credentials: true,
+    }));
+}
+else {
+    app.use(morgan('dev')); // 이걸쓰면 로그가 남음
+    app.use(cors({
+        origin: true,
+        credentials: true,
+    }));
+}
 
 db.sequelize.sync({ force: false })
     .then(() => {
@@ -33,12 +52,9 @@ db.sequelize.sync({ force: false })
     });
 passportConfig();
 
-app.use(morgan('dev')); // 이걸쓰면 로그가 남음
+
 app.use('/', express.static('uploads'));
-app.use(cors({
-    origin: true,
-    credentials: true,
-}));
+
 app.use(express.json()) // app.use('/', express.json()) ; 원래 경로를 저렇게 넣는데 모든경로는 생략가능
 app.use(express.urlencoded({ extended: true })); // 요청에 본문이 들어왔을 때 request body에 넣어주는 역할;
 app.use(cookieParser(process.env.COOKIE_SECRET))
