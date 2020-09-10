@@ -19,7 +19,7 @@ import * as fs from 'fs'
 import * as path from 'path'
 
 export const indexRoot = path.join(__dirname);
-export const originURL = 'http://jinukcloud.pe.kr'
+export const baseURL = 'jinukcloud.pe.kr'
 console.log('indexRoot=', indexRoot);
 
 dotenv.config();
@@ -31,7 +31,7 @@ if (prod) {
     app.use(helmet());
     app.use(morgan('combined')); // 더 상세한 모드
     app.use(cors({
-        origin: originURL, // originURL이 아니면 다 거름
+        origin: `http://${baseURL}`, // originURL이 아니면 다 거름
         credentials: true,
     }));
 }
@@ -65,6 +65,7 @@ app.use(expressSession({
     cookie: {
         httpOnly: true,
         secure: false,
+        domain: prod ? `.${baseURL}` : undefined
     },
     // name: 'rnwaks'
 }))
